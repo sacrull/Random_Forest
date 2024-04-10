@@ -13,7 +13,7 @@ This decision tree worked really well so color, height, and weight will probably
 
 ![decision tree 2](decision_tree2.png)
 
-The more informative your training data is and the more decision trees you run (up to a point), the more accurate your model should be. 
+In this decision tree, separating tigers worked but not the other animals so not eating leaves is an important variable for distinguishing tigers but not other animals. Now imagine we run 1000 of these decision trees and take the most common outcome across all of them. The more informative your training data is and the more decision trees you run (up to a point), the more accurate your model should be!
 
 
 ### A basic random forest example using the R packages randomForest 
