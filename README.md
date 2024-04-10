@@ -2,11 +2,19 @@
 
 ### What is random forest analysis?
 
-//////////////////
+Random forest is a machine learning algorithm that combines the output of multiple decision trees into a single result. Random forest can be used for both classification and regression problems. For random forest classification the output is the class selected by most trees. For regression, the mean or average prediction of the individual trees is returned. 
 
-### How does it work?
+So say that we have a dataset of zoo animals and we've collected all sorts of information about those animals like thier size, shape, weight, color, height, environment etc. We can then use decision trees to try to classify our different animals based on different criteria that we've collected.
 
-/////////////////
+![decision tree 1](decision_tree1.pdf)
+
+This decision tree worked really well so color, height, and weight will probably be major variables that influence our final random forest analysis. But you've probably collected more than just these three variables, so by running random forest which randomly subsets your data and makes many different decision trees (i.e., the forest), you can improve you rmodel. So another decision tree might be something like the one below with different node splits:
+
+
+![decision tree 2](decision_tree2.pdf)
+
+The more informative your training data is and the more decision trees you run (up to a point), the more accurate your model should be. 
+
 
 ### A basic random forest example using the R packages randomForest 
 
