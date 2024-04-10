@@ -4,7 +4,7 @@
 
 Random forest is a machine learning algorithm that combines the output of multiple decision trees into a single result. Random forest can be used for both classification and regression problems. For random forest classification the output is the class selected by most trees. For regression, the mean or average prediction of the individual trees is returned. 
 
-So say that we have a dataset of zoo animals and we've collected all sorts of information about those animals like thier size, shape, weight, color, height, environment etc. We can then use decision trees to try to classify our different animals based on different criteria that we've collected.
+So say that we have a dataset of zoo animals and we've collected all sorts of information about those animals like thier size, shape, weight, color, height, environment etc. The data we've collected becomes our training data and basis of our random forest model. We can then use decision trees to try to classify our different animals based on the training data.
 
 ![decision tree 1](decision_tree1.png)
 
