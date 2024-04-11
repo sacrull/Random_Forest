@@ -132,39 +132,42 @@ What this *doesn't* tell you is directionality! And without prior expectations o
 Shapley values are a way relative impact of each feature we're measuring on the eventual output of the machine learning model by comparing the relative effect of the inputs against the average. We can use shapley values to get a sense of direction and how the variables impact the random forest outcome.
 
 ```R
-install.packages("kernelshap")
-install.packages("ranger")
-install.packages("vip")
+# install.packages("kernelshap")
+# install.packages("ranger")
+# install.packages("vip")
+# devtools::install_github("ModelOriented/shapviz")
 
 library(ranger) #random forest package
 library(kernelshap) #shapley
 library(vip)
+library(shapviz)
+
 ```
 
 We are going to subset our data to only include the variables from the first random forest model that was generated since computing shapley values is computationally intensive. 
 ```R
-ra.study_group <- ranger(var ~ ASV143+ASV152+ASV2255+ASV6+ASV825+ASV117+ASV2344+ASV869+ASV1225+ASV11+ASV83+ASV341+ASV891+ASV742+ASV96+ASV243+ASV7+ASV1069+ASV199+ASV188+ASV93+ASV359+ASV845+ASV286+ASV4197+ASV490+ASV36+ASV670+ASV14+ASV435, data = asv_tab_var, scale.permutation.importance = TRUE, importance = 'permutation')
-# ra.study_group
+ra.study_group <- ranger(var ~ ASV143+ASV152+ASV2255+ASV6+ASV825+ASV117+ASV2344+ASV869+ASV1225+ASV11, data = asv_tab_var, scale.permutation.importance = TRUE, importance = 'permutation')
+ra.study_group
 # Ranger result
 
 # Call:
-#  ranger(var ~ ASV143 + ASV152 + ASV2255 + ASV6 + ASV825 + ASV117 +      ASV2344 + ASV869 + ASV1225 + ASV11 + ASV83 + ASV341 + ASV891 +      ASV742 + ASV96 + ASV243 + ASV7 + ASV1069 + ASV199 + ASV188 +      ASV93 + ASV359 + ASV845 + ASV286 + ASV4197 + ASV490 + ASV36 +      ASV670 + ASV14 + ASV435, data = asv_tab_var, scale.permutation.importance = TRUE,      importance = "permutation")
+#  ranger(var ~ ASV143 + ASV152 + ASV2255 + ASV6 + ASV825 + ASV117 +      ASV2344 + ASV869 + ASV1225 + ASV11, data = asv_tab_var, scale.permutation.importance = TRUE,      importance = "permutation")
 
 # Type:                             Classification
 # Number of trees:                  500
 # Sample size:                      748
-# Number of independent variables:  30
-# Mtry:                             5
+# Number of independent variables:  10
+# Mtry:                             3
 # Target node size:                 1
 # Variable importance mode:         permutation
 # Splitrule:                        gini
-# OOB prediction error:             41.84 %
+# OOB prediction error:             48.93 %
 ra.study_group$confusion.matrix
 #      predicted
 # true  HEU  HI HUU
-#   HEU  97  64  63
-#   HI   28 211  55
-#   HUU  39  64 127
+#   HEU  55  55 114
+#   HI   15 200  79
+#   HUU  43  60 127
 #variable importance
 pdf("./ra.importance.pdf")
 vip(ra.study_group, title = "Variable Importance")
@@ -176,9 +179,63 @@ ranger::importance(ra.study_group) #gives the value for each variable
 Now that we have the random forest model we can start getting shapley values. This will take awhile.
 ```R
 s <- kernelshap(ra.study_group,
-                X =asv_tab_var[ , c("ASV143", "ASV152", "ASV2255", "ASV6", "ASV825", "ASV117", "ASV2344", "ASV869", "ASV1225", "ASV11", "ASV83", "ASV341", "ASV891", "ASV742", "ASV96", "ASV243", "ASV7", "ASV1069", "ASV199", "ASV188", "ASV93", "ASV359", "ASV845", "ASV286", "ASV4197", "ASV490", "ASV36", "ASV670", "ASV14", "ASV435")],
+                X =asv_tab_var[ , c("ASV143", "ASV152", "ASV2255", "ASV6", "ASV825", "ASV117", "ASV2344", "ASV869", "ASV1225", "ASV11")],
                 bg_X = asv_tab_var) # small dataset, can see all of them
+sv <- shapviz(s) #convert to shapviz object
 ```
+Now lets find the directionality
+First what features are the most important for HUU, HEU, and HI?
+```R
+pdf("shap_overall_import.pdf")
+sv_importance(sv, show_numbers = TRUE)
+dev.off()
+pdf("shap_HUU_import.pdf")
+sv_importance(sv$HUU, show_numbers = TRUE)
+dev.off()
+```
+![shap_overall_import](shap_overall_import.png)
+![shap_HUU_import](shap_HUU_import.png)
+
+Looks like ASV 143 is an important predictor of if a sample is HUU or HI. Comparetively ASV117 is more important for determining if a sample is HEU. Now that we know which ones are important, let's find out how they influence the random forest. 
+```R
+pdf("shaple_values_all.pdf", height = 20, width =20)
+sv_importance(sv, kind = "bee")
+dev.off()
+```
+![shaple_values_all](shaple_values_all.png)
+
+These plots are a little hard to read, so why don't we look at specifc variables in them.
+```R
+import_feature <- c("ASV143", "ASV11")
+pdf("feature_values.pdf", height =30 , width =30)
+sv_dependence(sv, v = import_feature)
+dev.off()
+pdf("feature_values_HI.pdf")
+sv_dependence(sv$HI, v = "ASV2344")
+dev.off()
+```
+![feature_values](feature_values.png)
+![feature_values_HI](feature_values_HI.png)
+
+Now that we have an idea about directionality, I am interested in a particular sample to see how the model decided what category it belongs to.
+```R
+pdf("sample1_decomp.pdf", height =20, width =20)
+sv_waterfall(sv, row_id = 1)
+dev.off()
+```
+![sample1_decomp](sample1_decomp.png)
 
 Here is an excellent tutorial to follow for more indepth infromation
 https://www.css.cornell.edu/faculty/dgr2/_static/files/R_html/CompareRandomForestPackages.html
+
+
+
+
+Convert pdf to pngs on mac:
+```sh
+for i in *.pdf; do
+  name=$i;
+  name=${name%.*};
+  sips -s format png $i --out ${name}.png;
+done
+```
