@@ -24,8 +24,12 @@ Say that you are looking at data generated from the oral microbiome from childre
 
 There is a lot of overlap and the total proportion of variance described by each axis is very small (0.3 & 0.2%) but nevertheless if we perform a test of significance (PERMANOVA) the differences between groups is significant (p = 0.001). But this doesn't give us much information about *how* they compare to one another (or why they are different). There are many different ways to get more information beyond qualitative ordination plots but one way that I like is through random forest analysis. 
 
+Let's get the data first
+```sh
+wget https://raw.githubusercontent.com/sacrull/Random_Forest/main/sequence_table.filt.txt
+wget wget https://raw.githubusercontent.com/sacrull/Random_Forest/main/map.filt.txt
+```
 So to start, let's install and load the random forest package
-
 ```R
 # install required packages 
 install.packages("randomForest")
@@ -123,4 +127,59 @@ And the three most important ASVs in the MDG plot are:
 
 What this *doesn't* tell you is directionality! And without prior expectations of what variables (here bacteria) are important in your different groups, it can be really difficult to explain how they contribute. Luckily there are post-hoc analyses you can do with random forest models that give you a better sense of how different variables contribute, which is where measures like Shapley values come in :)
 
+### Shapley Values
 
+Shapley values are a way relative impact of each feature we're measuring on the eventual output of the machine learning model by comparing the relative effect of the inputs against the average. We can use shapley values to get a sense of direction and how the variables impact the random forest outcome.
+
+```R
+install.packages("kernelshap")
+install.packages("ranger")
+install.packages("vip")
+
+library(ranger) #random forest package
+library(kernelshap) #shapley
+library(vip)
+```
+
+We are going to subset our data to only include the variables from the first random forest model that was generated since computing shapley values is computationally intensive. 
+```R
+ra.study_group <- ranger(var ~ ASV143+ASV152+ASV2255+ASV6+ASV825+ASV117+ASV2344+ASV869+ASV1225+ASV11+ASV83+ASV341+ASV891+ASV742+ASV96+ASV243+ASV7+ASV1069+ASV199+ASV188+ASV93+ASV359+ASV845+ASV286+ASV4197+ASV490+ASV36+ASV670+ASV14+ASV435, data = asv_tab_var, scale.permutation.importance = TRUE, importance = 'permutation')
+ra.study_group
+# Ranger result
+
+# Call:
+#  ranger(var ~ ASV143 + ASV152 + ASV2255 + ASV6 + ASV825 + ASV117 +      ASV2344 + ASV869 + ASV1225 + ASV11 + ASV83 + ASV341 + ASV891 +      ASV742 + ASV96 + ASV243 + ASV7 + ASV1069 + ASV199 + ASV188 +      ASV93 + ASV359 + ASV845 + ASV286 + ASV4197 + ASV490 + ASV36 +      ASV670 + ASV14 + ASV435, data = asv_tab_var, scale.permutation.importance = TRUE,      importance = "permutation")
+
+# Type:                             Classification
+# Number of trees:                  500
+# Sample size:                      748
+# Number of independent variables:  30
+# Mtry:                             5
+# Target node size:                 1
+# Variable importance mode:         permutation
+# Splitrule:                        gini
+# OOB prediction error:             42.78 %
+ra.study_group$confusion.matrix
+
+#      predicted
+# true  HEU  HI HUU
+#   HEU 101  63  60
+#   HI   31 210  53
+#   HUU  41  72 117
+#variable importance
+pdf("./ra.importance.pdf")
+vip(ra.study_group, title = "Variable Importance")
+dev.off()
+ranger::importance(ra.study_group) #gives the value for each variable
+```
+![ranger random forest](ra.importance.pdf)
+
+Now that we have the random forest model we can start getting shaplet values
+```R
+kernelshap(ra.study_group,
+                X =asv_tab_var[ , c("ASV143", "ASV152", "ASV2255", "ASV6", "ASV825", "ASV117", "ASV2344", "ASV869", "ASV1225", "ASV11", "ASV83", "ASV341", "ASV891", "ASV742", "ASV96", "ASV243", "ASV7", "ASV1069", "ASV199", "ASV188", "ASV93", "ASV359", "ASV845", "ASV286", "ASV4197", "ASV490", "ASV36", "ASV670", "ASV14", "ASV435")],
+                bg_X = asv_tab_var) # small dataset, can see all of them
+```
+
+Here is an excellent tutorial to follow for more indepth infromation
+https://www.css.cornell.edu/faculty/dgr2/_static/files/R_html/CompareRandomForestPackages.html
