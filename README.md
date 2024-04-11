@@ -144,7 +144,7 @@ library(vip)
 We are going to subset our data to only include the variables from the first random forest model that was generated since computing shapley values is computationally intensive. 
 ```R
 ra.study_group <- ranger(var ~ ASV143+ASV152+ASV2255+ASV6+ASV825+ASV117+ASV2344+ASV869+ASV1225+ASV11+ASV83+ASV341+ASV891+ASV742+ASV96+ASV243+ASV7+ASV1069+ASV199+ASV188+ASV93+ASV359+ASV845+ASV286+ASV4197+ASV490+ASV36+ASV670+ASV14+ASV435, data = asv_tab_var, scale.permutation.importance = TRUE, importance = 'permutation')
-ra.study_group
+# ra.study_group
 # Ranger result
 
 # Call:
@@ -158,25 +158,24 @@ ra.study_group
 # Target node size:                 1
 # Variable importance mode:         permutation
 # Splitrule:                        gini
-# OOB prediction error:             42.78 %
+# OOB prediction error:             41.84 %
 ra.study_group$confusion.matrix
-
 #      predicted
 # true  HEU  HI HUU
-#   HEU 101  63  60
-#   HI   31 210  53
-#   HUU  41  72 117
+#   HEU  97  64  63
+#   HI   28 211  55
+#   HUU  39  64 127
 #variable importance
 pdf("./ra.importance.pdf")
 vip(ra.study_group, title = "Variable Importance")
 dev.off()
 ranger::importance(ra.study_group) #gives the value for each variable
 ```
-![ranger random forest](ra.importance.pdf)
+![ranger random forest](ra.importance.png)
 
-Now that we have the random forest model we can start getting shaplet values
+Now that we have the random forest model we can start getting shapley values. This will take awhile.
 ```R
-kernelshap(ra.study_group,
+s <- kernelshap(ra.study_group,
                 X =asv_tab_var[ , c("ASV143", "ASV152", "ASV2255", "ASV6", "ASV825", "ASV117", "ASV2344", "ASV869", "ASV1225", "ASV11", "ASV83", "ASV341", "ASV891", "ASV742", "ASV96", "ASV243", "ASV7", "ASV1069", "ASV199", "ASV188", "ASV93", "ASV359", "ASV845", "ASV286", "ASV4197", "ASV490", "ASV36", "ASV670", "ASV14", "ASV435")],
                 bg_X = asv_tab_var) # small dataset, can see all of them
 ```
