@@ -181,6 +181,7 @@ Now that we have the random forest model we can start getting shapley values. Th
 s <- kernelshap(ra.study_group,
                 X =asv_tab_var[ , c("ASV143", "ASV152", "ASV2255", "ASV6", "ASV825", "ASV117", "ASV2344", "ASV869", "ASV1225", "ASV11")],
                 bg_X = asv_tab_var) # small dataset, can see all of them
+load("test.RData")
 sv <- shapviz(s) #convert to shapviz object
 ```
 Now lets find the directionality
@@ -198,7 +199,7 @@ dev.off()
 
 Looks like ASV 143 is an important predictor of if a sample is HUU or HI. Comparetively ASV117 is more important for determining if a sample is HEU. Now that we know which ones are important, let's find out how they influence the random forest. 
 ```R
-pdf("shaple_values_all.pdf", height = 20, width =20)
+pdf("shaple_values_all.pdf", width =20)
 sv_importance(sv, kind = "bee")
 dev.off()
 ```
@@ -219,10 +220,14 @@ dev.off()
 
 Now that we have an idea about directionality, I am interested in a particular sample to see how the model decided what category it belongs to.
 ```R
+pdf("sample1_decomp_all.pdf", height =20, width =20)
+sv_force(sv, row_id = 1)
+dev.off()
 pdf("sample1_decomp.pdf", height =20, width =20)
-sv_waterfall(sv, row_id = 1)
+sv_waterfall(sv$HUU, row_id = 1)
 dev.off()
 ```
+![sample1_decomp_all](sample1_decomp_all.png)
 ![sample1_decomp](sample1_decomp.png)
 
 Here is an excellent tutorial to follow for more indepth infromation
