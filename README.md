@@ -136,12 +136,14 @@ Shapley values are a way relative impact of each feature we're measuring on the 
 # install.packages("ranger")
 # install.packages("vip")
 # devtools::install_github("ModelOriented/shapviz")
+# install.packages("reshape2")
 
 library(ranger) #random forest package
 library(kernelshap) #shapley
 library(vip)
 library(shapviz)
-
+library(reshape2)
+library(ggplot2)
 ```
 
 We are going to subset our data to only include the variables from the first random forest model that was generated since computing shapley values is computationally intensive. 
@@ -217,6 +219,24 @@ dev.off()
 ```
 ![feature_values](feature_values.png)
 ![feature_values_HI](feature_values_HI.png)
+I have trouble telling directionality in some of these so why don't we make our own plots and add a trend line? We will do this for just HUU
+```R
+df1 <- cbind(melt(get_feature_values(sv$HUU)), melt(as.data.frame(get_shap_values(sv$HUU))))
+colnames(df1)[2] <- "feature_value"
+colnames(df1)[4] <- "shap_value"
+df1 <- df1[, c(1,2,4)]
+
+import_feature <- c("ASV143", "ASV11", "ASV2344")
+df2 <- df1[df1$variable %in% import_feature,]
+pdf("shap_feat.pdf",height = 20, width =20)
+ggplot(df2, aes(feature_value, shap_value)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE)+
+  facet_wrap(~factor(variable, import_feature), scales ="free")+
+  theme_minimal()
+dev.off()
+```
+![shap_feat](shap_feat.png)
 
 Now that we have an idea about directionality, I am interested in a particular sample to see how the model decided what category it belongs to.
 ```R
@@ -235,7 +255,7 @@ https://www.css.cornell.edu/faculty/dgr2/_static/files/R_html/CompareRandomFores
 
 
 
-
+# Fun extra command
 Convert pdf to pngs on mac:
 ```sh
 for i in *.pdf; do
